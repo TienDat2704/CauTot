@@ -1,99 +1,59 @@
-import pygame
-import time
-import random
-pygame.font.init()
+import pygame as pg
+from enemy import Enemy
+import constants as c
 
-WIDTH, HEIGHT = 1000, 800
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Space Dodge")
 
-BG = pygame.image.load("bg.jpg")
-# BG = pygame.transform.scale(pygame.image.load("bg.jpg"), (WIDTH, HEIGHT))
+#initialise pygame
+pg.init()
 
-PLAYER_WIDTH = 40
-PLAYER_HEIGHT = 60
-PLAYER_VEL = 5
+#create clocl
+clock = pg.time.Clock()
 
-STAR_WIDTH = 10
-STAR_HEIGHT = 20
-STAR_VEL = 3
 
-FONT = pygame.font.SysFont("comicsans", 30)
+#create game window
+Screen = pg.display.set_mode((c.WIDTH,c.HEIGHT))
+pg.display.set_caption("A tower defense gane without a name")
 
-def drawn(player, elapsed_time, stars):
-    WIN.blit(BG, (0, 0))
-    
-    time_text = FONT.render(f"time: {round(elapsed_time)}s", 1, "black")
-    WIN.blit(time_text, (10, 10))
-    
-    pygame.draw.rect(WIN, "red", player)
-    
-    for star in stars:
-        pygame.draw.rect(WIN, "green", star)
-    
-    pygame.display.update()
-    
+#load image
+enemy_image = pg.image.load("assets/images/enemies/enemy_1.png").convert_alpha()
 
-def main():
-    run = True
-    
-    player = pygame.Rect(200, HEIGHT - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
-    
-    clock = pygame.time.Clock()
-    
-    start_time = time.time()
-    elapsed_time = 0
-    
-    star_add_increment = 2000
-    star_count = 0
-    
-    stars = []
-    hit = False
-    
-    while run:
-        star_count += clock.tick(60)
-        elapsed_time = time.time() - start_time
-        
-        if star_count > star_add_increment:
-            for _ in range(20):
-                star_x = random.randint(0, WIDTH - STAR_WIDTH)
-                star = pygame.Rect(star_x, -STAR_HEIGHT, STAR_WIDTH, STAR_HEIGHT)
-                stars.append(star)
 
-            star_add_increment = max(200, star_add_increment -50)
-            star_count = 0
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-                break
-        #movement trai phai
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and player.x - PLAYER_VEL >= 0:
-            player.x -= PLAYER_VEL
-        if keys[pygame.K_RIGHT] and player.x + PLAYER_VEL + PLAYER_WIDTH <= WIDTH:
-            player.x += PLAYER_VEL
-            
-        for star in stars[:]:
-            star.y += STAR_VEL
-            if star.y > HEIGHT:
-                stars.remove(star)
-            elif star.y + star.height >= player.y and star.colliderect(player):
-                stars.remove(star)
-                hit = True
-                break
-            
-        if hit:
-            lost_text = FONT.render("YOU LOST!" , 1 , "black")
-            WIN.blit(lost_text, (WIDTH/2 - lost_text.get_width()/2 , HEIGHT/2 - lost_text.get_height()/2))
-            pygame.display.update()
-            pygame.time.delay(4000)
-            break
-                
-        drawn(player, elapsed_time, stars)
-            
-    pygame.quit()
+#create groups
+enemy_group = pg.sprite.Group()
+
+waypoints = [
+    (100,100),
+    (400,200),
+    (400,100),
+    (200,300)
+]
+
+enemy = Enemy(waypoints, enemy_image)
+enemy_group.add(enemy)
+
+#game loop
+run = True
+while run:
     
+    clock.tick(c.FPS)
     
-if __name__ == "__main__":
-    main()
+    Screen.fill("grey100")
+    
+    #draw enemy path
+    pg.draw.lines(Screen, "grey0", False, waypoints)
+    
+    #update groups
+    enemy_group.update()
+    
+    #draw groups
+    enemy_group.draw(Screen)
+    
+    #event handler
+    for event in pg.event.get():
+        #quit progam
+        if event.type == pg.QUIT:
+            run = False
+    #update display
+    pg.display.flip()
+           
+pg.quit()
